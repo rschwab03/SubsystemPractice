@@ -10,6 +10,14 @@ As the sim builds, main.cpp should only include things like:
 In this structure, a simulation class initializes and runs the models, allowing for 
 more sofficsticated infrastructure to run scenarios, or sets of scenarios
 
+/*
+/*
+
+
+Currently to compile (I'm using g++):
+g++ mg++ main.cpp Vehicles/VehicleBase.cpp Vehicles/Drone.cpp Vehicles/Target.cpp
+
+Better: implement a CMAKE infrastructure to build
 */
 
 //Models & Such
@@ -24,6 +32,8 @@ more sofficsticated infrastructure to run scenarios, or sets of scenarios
 #include <iostream>
 
 
+
+
 int main(){
     std::srand(1); // ##TODO: this is an outdated RNG, would be way better to use something modern
 
@@ -33,7 +43,7 @@ int main(){
     std::unordered_map<int, RegistryEntry> registry;
     int registry_id = 0;
 
-    int num_tgts = 12;
+    int num_tgts = 12;  // initialize 12 targets (flying)
     tgts.reserve(num_tgts);
     for(int i=0; i<num_tgts;i++){
         tgts.emplace_back(Target());
@@ -41,7 +51,7 @@ int main(){
         registry_id++;
     };
 
-    int num_drones = 1;
+    int num_drones = 1; // initialize one ISR drone
     drones.reserve(num_drones);
     for(int i=0; i<num_drones; i++){
         drones.emplace_back(Drone(0,0,0,5));
@@ -58,3 +68,22 @@ int main(){
     return 0;
 
 }
+
+
+
+/*
+More notes:
+
+This sim creates targets that move in 3-space.  Without any input variables, their 
+initial position and speed is randomized.  
+Drones (intended to be ISR or intercepter) are added next. 
+Right now the drones don't really do anything.
+
+Next step would be to build sensor subsystems to attach to the drones, then add noise
+to their detections.
+
+After this, a Kalman filter could be explored in the drones' GNC algorithms.
+These algorithms should be models of their own to allow modularity in what each drone
+is capable of.
+
+*/
