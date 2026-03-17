@@ -15,7 +15,7 @@ more sofficsticated infrastructure to run scenarios, or sets of scenarios
 
 
 Currently to compile (I'm using g++):
-g++ mg++ main.cpp Vehicles/VehicleBase.cpp Vehicles/Drone.cpp Vehicles/Target.cpp
+g++ main.cpp Vehicles/VehicleBase.cpp Vehicles/Drone.cpp Vehicles/Target.cpp
 
 Better: implement a CMAKE infrastructure to build
 */
