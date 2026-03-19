@@ -1,2 +1,6 @@
+#vscode fun
+.vscode/
+
 # Build artifacts
 *.out
+Sim/build/

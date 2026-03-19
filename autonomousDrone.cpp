@@ -62,7 +62,7 @@ class Vehicle{
             
         }
 
-        void normalize_heading(Hed3 heading){
+        void normalize_heading(Hed3& heading){
             normalizer = 1/std::sqrt(heading.x*heading.x + heading.y*heading.y + heading.z*heading.z);
             heading.x *= normalizer;
             heading.y *= normalizer;
