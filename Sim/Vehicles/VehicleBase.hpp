@@ -40,7 +40,9 @@ class VehicleBase{
 
         //setters
         void update_pos(Pos3 new_pos){pos = new_pos;}
-        void update_heading(Hed3 new_heading){heading = new_heading;}
+        void update_heading(Hed3 new_heading){
+            normalize_heading(new_heading); // ensures new heading is normalized
+            heading = new_heading;}
 
 
 };
