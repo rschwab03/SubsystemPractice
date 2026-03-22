@@ -82,7 +82,9 @@ class Vehicle{
 
         //setters
         void update_pos(Pos3 new_pos){pos = new_pos;}
-        void update_heading(Hed3 new_heading){heading = new_heading;}
+        void update_heading(Hed3 new_heading){
+            normalize_heading(new_heading);
+            heading = new_heading;}
 
 
 };
@@ -145,7 +147,7 @@ int main(){
         tgts.emplace_back(Target());
         registry[registry_id] = {VehicleType::Target, &tgts.back()};
         registry_id++;
-    };
+    }
 
     int num_drones = 1;
     drones.reserve(num_drones);
@@ -155,7 +157,39 @@ int main(){
         registry_id++;
     }
 
+
+
+    float dt = 0.1;
+    float sim_time = 0.0;
+    float end_time = 3600.0;
+
     std::cout << tgts[11].get_pos_x() << std::endl;
+    while(sim_time < end_time){
+        // // Update Targets
+        // for(auto& tgt : tgts){
+        //     tgt.move(dt);
+        // };
+
+        // // Update Drones
+        // for(auto& drone : drones){
+        //     drone.update(dt);
+        // };
+
+        //Update all Vehicles
+        for(auto& [id, entry]: registry){
+            entry.vehicle->update(dt);
+        }
+        
+
+        sim_time += dt;
+    }
+    std::cout << tgts[11].get_pos_x() << std::endl;
+    std::cout << tgts[11].get_head_x() << " " << tgts[11].get_head_y() << " " << tgts[11].get_head_z() << std::endl;
+    std::cout << tgts[11].get_speed() << std::endl;
+
+    
+
+    // std::cout << tgts[11].get_pos_x() << std::endl;
 
     // int i=8;
     // std::cout << "Key: " << i << " value: " << registry[i].vehicle << std::endl;
