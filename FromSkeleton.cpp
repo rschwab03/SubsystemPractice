@@ -29,8 +29,9 @@ double mag(Vec3 a){
 }
 
 Vec3 normalize(Vec3 a){
-    double normalizer = 1/std::sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
-    return a*normalizer;
+    double m = mag(a);
+    if (m==0) return {0,0,0};
+    return a*(1.0/m);
 }
 
 
@@ -61,6 +62,40 @@ class World{
     virtual std::vector<Entity*> get_entities() const = 0;
     virtual std::vector<Entity*> get_targets() const = 0;
 };
+
+
+class Sensor{
+    public:
+    virtual ~Sensor() = default;
+
+    virtual std::vector<Vec3> Dwell() = 0;
+};
+
+
+class SimpleSensor : public Sensor{
+    private:
+    World& world_;
+    double noise_scale_;
+    double noise(){
+        return noise_scale_ * ((double)rand() / RAND_MAX - 0.5);
+    }
+    
+    public:
+    SimpleSensor(World& world, double noise_scale)
+    : world_(world)
+    , noise_scale_(noise_scale)
+    {}
+    std::vector<Vec3> Dwell() override{
+        std::vector<Vec3> Detections;
+        for (auto* tgt : world_.get_targets()){
+            Detections.push_back(tgt->position()+(Vec3{1,1,1}*noise()));
+        }
+        return Detections;
+    }
+};
+
+
+
 
 // --------------------------------------------
 // A simple moving entity (constant velocity)
@@ -105,16 +140,22 @@ class Target : public MovingEntity{
 
 class Drone : public MovingEntity{
     public:
-    Drone(int id, const Vec3& pos, const Vec3& vel, World& world) 
+    Drone(int id, const Vec3& pos, const Vec3& vel, World& world, Sensor& sensor) 
     : MovingEntity(id, pos, vel)
     , world_(world)
+    , sensor_(sensor)
     {
         type_ = "Drone";
     }
 
     void update(double dt) override {
-        auto tgts = world_.get_targets();
-        update_vel(tgts);
+        // auto tgts = world_.get_targets();
+        // update_vel(tgts);
+
+        std::vector<Vec3> detects = sensor_.Dwell();
+        update_vel(detects);
+
+
         // std::cout << "(Vx,Vy,Vz): ("
         //         <<velocity_.x << ", "
         //         <<velocity_.y << ", "
@@ -127,9 +168,10 @@ class Drone : public MovingEntity{
 
     private:
     World& world_;
-    Entity* my_target = nullptr;
+    Sensor& sensor_;
+    // Entity* my_target = nullptr;
 
-    void update_vel(std::vector<Entity*> tgts){
+    void update_vel(std::vector<Vec3>& tgts){
         if (tgts.empty()){
             std::cout << "[Drone::update_vel]  No Targets!" << std::endl;
             return;
@@ -137,24 +179,24 @@ class Drone : public MovingEntity{
 
 
         Vec3 dir = normalize(velocity_);
-        if(my_target == nullptr){
-            my_target = tgts.front();
-            std::cout << "Updated tgt to Entity id: " << my_target->id() << std::endl;
-        }
+        // if(my_target == nullptr){
+            Vec3 my_target = tgts.front();
+            // std::cout << "Updated tgt to Entity id: " << my_target->id() << std::endl;
+        // }
         
         for(const auto& tgt : tgts){ // This is probably pretty lame to find the current target...
            
-            if (dist(tgt->position(),position_) < dist(my_target->position(),position_)){
+            if (dist(tgt,position_) < dist(my_target,position_)){
                 my_target = tgt;
-                std::cout << "Updated tgt to Entity id: " << my_target->id() << std::endl;
+                // std::cout << "Updated my target to Entity id: " << my_target->id() << std::endl;
                 
-            }
+            }  
         }
         double current_speed = mag(velocity_);
 
-        if (dist(my_target->position(),position_) > 0){
+        if (dist(my_target,position_) > 0){
             // std::cout<<"HERE" <<std::endl;
-            dir = (my_target->position()-position_)*(1/(dist(my_target->position(),position_)));
+            dir = (my_target-position_)*(1/(dist(my_target,position_)));
         }
         // std::cout << "SPEED: " << current_speed << std::endl;
         // std::cout << "(Dx,Dy,Dz): ("
@@ -195,7 +237,7 @@ public:
     std::vector<Entity*> get_targets() const override {
         std::vector<Entity*> result;
         for(const auto& e : entities_){
-            if(e->type() == "Target"){
+            if(dynamic_cast<Target*>(e.get())){
                 result.push_back(e.get());
             }
         }
@@ -228,6 +270,8 @@ public:
 // --------------------------------------------
 int main() {
     Simulation sim;
+    SimpleSensor sensor(sim,1);
+
 
     //Hardcoding new entities for now...
     sim.add_entity(std::make_shared<Target>(
@@ -240,7 +284,7 @@ int main() {
         int{4}, Vec3{40,10,25}, Vec3{1,0,0}
     ));
     sim.add_entity(std::make_shared<Drone>(
-        int{3}, Vec3{0,0,0}, Vec3{3,0,0}, sim
+        int{3}, Vec3{0,0,0}, Vec3{3,0,0}, sim, sensor
     ));
 
 
@@ -249,7 +293,7 @@ int main() {
 
     double dt = 1.0;
 
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 100; ++i) {
         sim.step(dt);
     }
 
